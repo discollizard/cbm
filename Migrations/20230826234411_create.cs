@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TesteCobmais.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class create : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -31,10 +31,10 @@ namespace TesteCobmais.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    ClienteId = table.Column<int>(type: "int", nullable: false),
                     DividaId = table.Column<int>(type: "int", nullable: false),
+                    ClienteId = table.Column<int>(type: "int", nullable: false),
                     Vencimento = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Valor = table.Column<float>(type: "real", nullable: false),
+                    Valor = table.Column<double>(type: "float", nullable: false),
                     TipoContrato = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
@@ -54,7 +54,7 @@ namespace TesteCobmais.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    ContratoId = table.Column<int>(type: "int", nullable: false),
+                    DividaId = table.Column<int>(type: "int", nullable: false),
                     ConsultaTimestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
                     AtrasoEmDias = table.Column<int>(type: "int", nullable: false),
                     ValorAtualizado = table.Column<float>(type: "real", nullable: false),
@@ -64,8 +64,8 @@ namespace TesteCobmais.Migrations
                 {
                     table.PrimaryKey("PK_LogConsultas", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_LogConsultas_Contratos_ContratoId",
-                        column: x => x.ContratoId,
+                        name: "FK_LogConsultas_Contratos_DividaId",
+                        column: x => x.DividaId,
                         principalTable: "Contratos",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -77,9 +77,9 @@ namespace TesteCobmais.Migrations
                 column: "ClienteId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LogConsultas_ContratoId",
+                name: "IX_LogConsultas_DividaId",
                 table: "LogConsultas",
-                column: "ContratoId");
+                column: "DividaId");
         }
 
         /// <inheritdoc />

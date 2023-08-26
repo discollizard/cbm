@@ -7,13 +7,8 @@
 <h1>Index</h1>
 
 <p>
-    <form method="post" asp-controller="Consultas" asp-action="ProcessarArquivoCSV" enctype="multipart/form-data">
-        <div class="form-group">
-            <label for="file">Selecionar arquivo</label>
-            <input type="file" name="File" id="file" accept=".csv" class="form-control-file">
-        </div>
-        <button type="submit" class="btn btn-primary">Importar</button>
-    </form>
+   
+    <a asp-action="ProcessarArquivoCSV">Processar arquivo disponível no servidor</a>
     @if (!ViewData.ModelState.IsValid)
     {
         <div class="alert alert-danger" style="margin-top: 20px;">
@@ -58,7 +53,7 @@
                 @Html.DisplayFor(modelItem => item.DescontoMaximo)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.contrato.Id)
+                @Html.DisplayFor(modelItem => item.contrato.DividaId)
             </td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |

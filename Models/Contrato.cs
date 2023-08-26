@@ -7,10 +7,11 @@ namespace TesteCobmais.Models;
     {
         [Key]
         public int Id { get; set; }
-        public int ClienteId { get; set; }
+        [Index(IsUnique = true)]
         public int DividaId { get; set; }
+        public int ClienteId { get; set; }
         public DateTime Vencimento { get; set; }
-        public float Valor { get; set; }
+        public double Valor { get; set; }
         
         //eu interpretei o tipo de contrato como podendo assumir infinitos valores diferentes
         //mas eu poderia usar um enum caso os tipos de contratos fossem finitos

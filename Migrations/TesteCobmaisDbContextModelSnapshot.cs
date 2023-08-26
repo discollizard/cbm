@@ -3,7 +3,6 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TesteCobmais.Data;
 
@@ -11,12 +10,10 @@ using TesteCobmais.Data;
 
 namespace TesteCobmais.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230825234907_InitialCreate")]
-    partial class InitialCreate
+    [DbContext(typeof(TesteCobmaisDbContext))]
+    partial class TesteCobmaisDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -63,8 +60,8 @@ namespace TesteCobmais.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<float>("Valor")
-                        .HasColumnType("real");
+                    b.Property<double>("Valor")
+                        .HasColumnType("float");
 
                     b.Property<DateTime>("Vencimento")
                         .HasColumnType("datetime2");
@@ -90,18 +87,18 @@ namespace TesteCobmais.Migrations
                     b.Property<DateTime>("ConsultaTimestamp")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("ContratoId")
-                        .HasColumnType("int");
-
                     b.Property<float>("DescontoMaximo")
                         .HasColumnType("real");
+
+                    b.Property<int>("DividaId")
+                        .HasColumnType("int");
 
                     b.Property<float>("ValorAtualizado")
                         .HasColumnType("real");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ContratoId");
+                    b.HasIndex("DividaId");
 
                     b.ToTable("LogConsultas");
                 });
@@ -109,7 +106,7 @@ namespace TesteCobmais.Migrations
             modelBuilder.Entity("TesteCobmais.Models.Contrato", b =>
                 {
                     b.HasOne("TesteCobmais.Models.Cliente", "cliente")
-                        .WithMany()
+                        .WithMany("Contratos")
                         .HasForeignKey("ClienteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -121,11 +118,16 @@ namespace TesteCobmais.Migrations
                 {
                     b.HasOne("TesteCobmais.Models.Contrato", "contrato")
                         .WithMany()
-                        .HasForeignKey("ContratoId")
+                        .HasForeignKey("DividaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("contrato");
+                });
+
+            modelBuilder.Entity("TesteCobmais.Models.Cliente", b =>
+                {
+                    b.Navigation("Contratos");
                 });
 #pragma warning restore 612, 618
         }

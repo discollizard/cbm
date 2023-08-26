@@ -7,7 +7,7 @@ namespace TesteCobmais.Models;
     {
         [Key]
         public int Id { get; set; }
-        public int ContratoId { get; set; }
+        public int DividaId { get; set; }
         [Display(Name = "Data e hora da consulta")]
         public DateTime ConsultaTimestamp{ get; set;}
         [Display(Name = "Atraso em dias")]
@@ -17,7 +17,7 @@ namespace TesteCobmais.Models;
         [Display(Name = "Desconto máximo")]
         public float DescontoMaximo { get; set; }
         
-        [ForeignKey("ContratoId")]
+        [ForeignKey("DividaId")]
         public Contrato contrato { get; set; }
     }
 

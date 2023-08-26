@@ -4,9 +4,9 @@ using TesteCobmais.Models;
 namespace TesteCobmais.Data;
 
 
-public class ApplicationDbContext: DbContext
+public class TesteCobmaisDbContext: DbContext
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+    public TesteCobmaisDbContext(DbContextOptions<TesteCobmaisDbContext> options)
              : base(options)
     {
 
