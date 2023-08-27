@@ -1,0 +1,50 @@
+﻿@model IEnumerable<TesteCobmais.Models.Contrato>
+
+@{
+    ViewData["Title"] = "Contratos";
+}
+
+<h1>Contratos</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.DividaId)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Vencimento)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Valor)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.TipoContrato)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.cliente)
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.DividaId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.VencimentoFormatado)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Valor)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.TipoContrato)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.cliente.Id)
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

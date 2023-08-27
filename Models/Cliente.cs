@@ -8,6 +8,7 @@ namespace TesteCobmais.Models;
         public int Id { get; set; }
         [Index(IsUnique = true)]
         public long CPF { get; set; }
+        [Display(Name = "Nome completo")]
         public string NomeCompleto { get; set; }
 
         public ICollection<Contrato> Contratos { get; set; }

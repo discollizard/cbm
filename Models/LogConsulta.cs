@@ -8,6 +8,7 @@ namespace TesteCobmais.Models;
         [Key]
         public int Id { get; set; }
         [MaxLength(100)]
+        [Display(Name = "Id do contrato")]
         public int ContratoId { get; set; }
         [Display(Name = "Data e hora da consulta")]
         public DateTime ConsultaTimestamp{ get; set;}
