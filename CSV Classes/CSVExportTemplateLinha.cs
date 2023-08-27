@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace TesteCobmais.CSV_Classes
 {
-    public class CSVExportTemplate
+    public class CSVExportTemplateLinha
     {
         public long CPF { get; set; }
         public string DATA { get; set; }

@@ -189,27 +189,45 @@ public class ConsultasController : Controller
         var query = from co in _context.Contratos
                     join c in _context.Clientes on co.ClienteId equals c.Id
                     join l in _context.LogConsultas on co.Id equals l.ContratoId into logGroup
+                    where logGroup.First() != null
                     select new
                     {
                         Contrato = co,
-                        Cliente = c,
-                        LatestLog = logGroup.OrderByDescending(l => l.ConsultaTimestamp).FirstOrDefault()
+                        CPF = c.CPF,
+                        ValorOriginal = co.Valor,
+                        LogMaisRecente = logGroup.OrderByDescending(l => l.ConsultaTimestamp).First()
                     };
 
         var resultado = query.ToList();
 
+        DateTime hoje = today;
+        string hojeFormatadoLinha = hoje.ToString("dd/MM/yyyy");
+
         //reconsultando a API se não existe registros referentes ao valor atualizado
         //de hoje
-        if (resultado.Count == 0)
-        {
 
+        for(int i = 0; i < resultado.Count; i++)
+        {
+            var linhaFormatada = new CSVExportTemplateLinha();
+            linhaFormatada.CPF = resultado[i].Cliente.CPF;
+            linhaFormatada.CPF = resultado[i].Cliente.CPF;
         }
 
-        return View();
+        //exportando pra csv
+        CsvConfiguration config = new CsvConfiguration(new CultureInfo("pt-BR"))
+        {
+            NewLine = Environment.NewLine,
+            Delimiter = ";"
+        };
+
+        StreamReader reader = new StreamReader("Arquivos CSV/dividas-originais_teste_cobmais_2021.csv");
+        string hojeFormatadoArquivo = hoje.ToString("dd-MM-yyyy");
+        using (var writer = new StreamWriter("Arquivos CSV/Divida-Atualizada-"+hojeFormatadoArquivo+".csv"))
+        using (var csv = new CsvWriter(writer, config))
+        {
+            csv.WriteRecords(resultado);
+        }
+
+        return RedirectToAction("Index");
     }
-
-    //private CSVExportTemplate MontarDadosParaExportacao()
-    //{
-
-    //}
 }
