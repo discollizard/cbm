@@ -78,7 +78,6 @@ public class ConsultasController : Controller
             .ToDictionary(contrato => contrato.DividaId, contrato => contrato.Id);
 
             //declarando timestamp de hoje fora do loop para evitar redeclarações desnecessarias
-            DateTime hoje = DateTime.Today;
 
             foreach (var registro in registros)
             {
@@ -128,9 +127,7 @@ public class ConsultasController : Controller
 
                 }
 
-                //calculando atraso
-                TimeSpan atraso = hoje - dataVencimento;
-                int atrasoEmDias = atraso.Days;
+                int atrasoEmDias = Contrato.CalcularVencimento(dataVencimento);
 
                 //TODO: abstrair as chamadas pra API em uma classe se tiver tempo
                 //fazendo chamada pra api
@@ -184,6 +181,8 @@ public class ConsultasController : Controller
     [HttpGet]
     public async Task<IActionResult> ExportarDividasAtualizadas()
     {
+        List<ErrosDeProcessamento> erros = new List<ErrosDeProcessamento>();
+
         DateTime today = DateTime.UtcNow.Date;
 
         var query = from co in _context.Contratos
@@ -192,10 +191,15 @@ public class ConsultasController : Controller
                     where logGroup.First() != null
                     select new
                     {
-                        Contrato = co,
                         CPF = c.CPF,
                         ValorOriginal = co.Valor,
-                        LogMaisRecente = logGroup.OrderByDescending(l => l.ConsultaTimestamp).First()
+                        VencimentoContrato = co.Vencimento,
+                        TipoDeContrato = co.TipoContrato,
+                        ContratoId = co.Id,
+                        DividaId = co.DividaId,
+                        LogMaisRecente = logGroup.OrderByDescending(l => l.ConsultaTimestamp).First().ConsultaTimestamp,
+                        ValorAtualizado = logGroup.OrderByDescending(l => l.ConsultaTimestamp).First().ValorAtualizado,
+                        PorcentagemDescontoMaximo = logGroup.OrderByDescending(l => l.ConsultaTimestamp).First().DescontoMaximo
                     };
 
         var resultado = query.ToList();
@@ -203,14 +207,72 @@ public class ConsultasController : Controller
         DateTime hoje = today;
         string hojeFormatadoLinha = hoje.ToString("dd/MM/yyyy");
 
-        //reconsultando a API se não existe registros referentes ao valor atualizado
-        //de hoje
+        List<CSVExportTemplateLinha> dadosParaExportar = new List<CSVExportTemplateLinha>();
 
-        for(int i = 0; i < resultado.Count; i++)
+        foreach(var registro in resultado)
         {
+            //reconsultando a API se não existe registros referentes ao valor atualizado
+            //de hoje
+            bool TimestampSimDeHoje = registro.LogMaisRecente.Date == DateTime.Today;
+
+            double valorAtualizado = registro.ValorAtualizado;
+
+            if (!TimestampSimDeHoje)
+            {
+                try { 
+                using (HttpClient client = new HttpClient())
+                    {
+                    int atrasoEmDias = Contrato.CalcularVencimento(registro.VencimentoContrato);
+                        string url = "https://api.cobmais.com.br/testedev/calculo";
+                        string payload = JsonConvert.SerializeObject(new Dictionary<string, object>
+                            {
+                                { "TipoContrato", registro.TipoDeContrato },
+                                { "Atraso", atrasoEmDias },
+                                { "Valor", registro.ValorOriginal },
+                            });
+
+                        HttpContent content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+                        HttpResponseMessage response = await client.PostAsync(url, content);
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            throw new Exception(response.StatusCode.ToString());
+                        }
+
+                        string responseBodyJson = await response.Content.ReadAsStringAsync();
+                        CalculoResponseBody responseBody = new CalculoResponseBody(responseBodyJson);
+
+                        //adicionando registro de log no banco
+                        LogConsulta logRegistro = new LogConsulta();
+                        logRegistro.ConsultaTimestamp = DateTime.Now;
+                        logRegistro.ContratoId = registro.ContratoId;
+                        logRegistro.AtrasoEmDias = atrasoEmDias;
+                        logRegistro.ValorAtualizado = responseBody.ValorAtualizado;
+                        logRegistro.DescontoMaximo = responseBody.DescontoMaximo;
+                        _context.Add(logRegistro);
+                        await _context.SaveChangesAsync();
+
+                        valorAtualizado = responseBody.ValorAtualizado;
+                    }
+                }
+                catch (Exception e)
+                {
+                    erros.Add(ErrosDeProcessamento.ERRO_AO_PROCESSAR_RESPOSTA_API);
+                }
+     
+            }
+
             var linhaFormatada = new CSVExportTemplateLinha();
-            linhaFormatada.CPF = resultado[i].Cliente.CPF;
-            linhaFormatada.CPF = resultado[i].Cliente.CPF;
+            linhaFormatada.CPF = registro.CPF;
+            linhaFormatada.DATA = hojeFormatadoLinha;
+            linhaFormatada.CONTRATO = registro.DividaId;
+            linhaFormatada.ValorOriginal = registro.ValorOriginal;
+            linhaFormatada.ValorAtualizado = valorAtualizado;
+            linhaFormatada.ValorDesconto = 
+                valorAtualizado - ((valorAtualizado / 100) * registro.PorcentagemDescontoMaximo);
+
+            dadosParaExportar.Add(linhaFormatada);
         }
 
         //exportando pra csv
@@ -225,7 +287,7 @@ public class ConsultasController : Controller
         using (var writer = new StreamWriter("Arquivos CSV/Divida-Atualizada-"+hojeFormatadoArquivo+".csv"))
         using (var csv = new CsvWriter(writer, config))
         {
-            csv.WriteRecords(resultado);
+            csv.WriteRecords(dadosParaExportar);
         }
 
         return RedirectToAction("Index");

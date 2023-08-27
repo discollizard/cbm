@@ -20,5 +20,13 @@ namespace TesteCobmais.Models;
 
         [ForeignKey("ClienteId")]
         public Cliente cliente { get; set; }
+
+        public static int CalcularVencimento(DateTime vencimento)
+        {
+            DateTime hoje = DateTime.Today;
+            TimeSpan atraso = hoje - vencimento;
+            int atrasoEmDias = atraso.Days;
+            return atrasoEmDias;
+        }
     }
 
