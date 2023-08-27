@@ -7,7 +7,7 @@ namespace TesteCobmais.CSV_Classes
     {
         public long CPF { get;set; }
         public string CLIENTE { get;set; }
-        public int CONTRATO { get;set; }
+        public string CONTRATO { get;set; }
         //vai ser lido como string, transformado para date dps
         public string VENCIMENTO { get;set; }
         public double VALOR { get;set; }

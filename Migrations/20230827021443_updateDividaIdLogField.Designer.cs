@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TesteCobmais.Data;
 
@@ -11,9 +12,11 @@ using TesteCobmais.Data;
 namespace TesteCobmais.Migrations
 {
     [DbContext(typeof(TesteCobmaisDbContext))]
-    partial class TesteCobmaisDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230827021443_updateDividaIdLogField")]
+    partial class updateDividaIdLogField
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -93,11 +96,11 @@ namespace TesteCobmais.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("int");
 
-                    b.Property<double>("DescontoMaximo")
-                        .HasColumnType("float");
+                    b.Property<float>("DescontoMaximo")
+                        .HasColumnType("real");
 
-                    b.Property<double>("ValorAtualizado")
-                        .HasColumnType("float");
+                    b.Property<float>("ValorAtualizado")
+                        .HasColumnType("real");
 
                     b.HasKey("Id");
 

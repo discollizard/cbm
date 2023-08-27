@@ -8,7 +8,8 @@ namespace TesteCobmais.Models;
         [Key]
         public int Id { get; set; }
         [Index(IsUnique = true)]
-        public int DividaId { get; set; }
+        [MaxLength(100)]
+        public string DividaId { get; set; }
         public int ClienteId { get; set; }
         public DateTime Vencimento { get; set; }
         public double Valor { get; set; }

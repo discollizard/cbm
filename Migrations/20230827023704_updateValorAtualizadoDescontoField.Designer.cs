@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TesteCobmais.Data;
 
@@ -11,9 +12,11 @@ using TesteCobmais.Data;
 namespace TesteCobmais.Migrations
 {
     [DbContext(typeof(TesteCobmaisDbContext))]
-    partial class TesteCobmaisDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230827023704_updateValorAtualizadoDescontoField")]
+    partial class updateValorAtualizadoDescontoField
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

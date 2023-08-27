@@ -7,17 +7,18 @@ namespace TesteCobmais.Models;
     {
         [Key]
         public int Id { get; set; }
-        public int DividaId { get; set; }
+        [MaxLength(100)]
+        public int ContratoId { get; set; }
         [Display(Name = "Data e hora da consulta")]
         public DateTime ConsultaTimestamp{ get; set;}
         [Display(Name = "Atraso em dias")]
         public int AtrasoEmDias { get; set;}
         [Display(Name = "Valor atualizado")]
-        public float ValorAtualizado { get; set;}
+        public double ValorAtualizado { get; set;}
         [Display(Name = "Desconto máximo")]
-        public float DescontoMaximo { get; set; }
+        public double DescontoMaximo { get; set; }
         
-        [ForeignKey("DividaId")]
+        [ForeignKey("ContratoId")]
         public Contrato contrato { get; set; }
     }
 

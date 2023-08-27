@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TesteCobmais.Data;
 
@@ -11,9 +12,11 @@ using TesteCobmais.Data;
 namespace TesteCobmais.Migrations
 {
     [DbContext(typeof(TesteCobmaisDbContext))]
-    partial class TesteCobmaisDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230827015033_updateDividaIdField")]
+    partial class updateDividaIdField
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -89,19 +92,18 @@ namespace TesteCobmais.Migrations
                     b.Property<DateTime>("ConsultaTimestamp")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("ContratoId")
-                        .HasMaxLength(100)
+                    b.Property<float>("DescontoMaximo")
+                        .HasColumnType("real");
+
+                    b.Property<int>("DividaId")
                         .HasColumnType("int");
 
-                    b.Property<double>("DescontoMaximo")
-                        .HasColumnType("float");
-
-                    b.Property<double>("ValorAtualizado")
-                        .HasColumnType("float");
+                    b.Property<float>("ValorAtualizado")
+                        .HasColumnType("real");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ContratoId");
+                    b.HasIndex("DividaId");
 
                     b.ToTable("LogConsultas");
                 });
@@ -121,7 +123,7 @@ namespace TesteCobmais.Migrations
                 {
                     b.HasOne("TesteCobmais.Models.Contrato", "contrato")
                         .WithMany()
-                        .HasForeignKey("ContratoId")
+                        .HasForeignKey("DividaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

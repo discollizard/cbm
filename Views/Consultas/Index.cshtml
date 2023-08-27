@@ -1,14 +1,15 @@
 ﻿@model IEnumerable<TesteCobmais.Models.LogConsulta>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Logs de consulta";
 }
 
-<h1>Index</h1>
+<h1>Logs de consulta</h1>
 
 <p>
    
-    <a asp-action="ProcessarArquivoCSV">Processar arquivo disponível no servidor</a>
+    <a asp-action="ImportarArquivoCSV">Processar arquivo CSV disponível no servidor</a>
+    <a asp-action="ExportarDividasAtualizadas">Exportar arquivo CSV com dívidas atualizadas</a>
     @if (!ViewData.ModelState.IsValid)
     {
         <div class="alert alert-danger" style="margin-top: 20px;">
@@ -50,15 +51,10 @@
                 @Html.DisplayFor(modelItem => item.ValorAtualizado)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.DescontoMaximo)
+                @Html.DisplayFor(modelItem => item.DescontoMaximo)%
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.contrato.DividaId)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
             </td>
         </tr>
 }
