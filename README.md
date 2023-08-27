@@ -16,7 +16,7 @@ Eu interpretei que a melhor abordagem seria ignorar os registros de condomínio a
 falar com alguem da equipe da Cobmais sobre.
 
 ## Notas sobre o desenvolvimento
-- A estrutura de tabelas foi definida em 3 tabelas: Clientes, Contratos e LogContratos. Isso se deu pois
+- **Sobre o banco de dados**: A estrutura de tabelas foi definida em 3 tabelas: Clientes, Contratos e LogContratos. Isso se deu pois
 eu considerei esta uma forma mais sã, concisa e atômica de separar os dados em seus diferentes domínios,
 evitando assim a duplicidade de informações em cada tabela.
 - **Sobre Performance**: O processamento foi feito da forma mais direta possível, considerando algumas 
@@ -35,3 +35,11 @@ melhoraria pois fazer chamadas HTTP possui um overhead inerente devido aos dados
 Portanto, fazer 1 chamada com vários dados é invariavalmente mais rápido que fazer várias chamadas com 1 objeto só.
 	3. Manipular a memória diretamente através da feature `unsafe` do C#; porém, isso sacrificaria 
 parte da segurança e legibilidade do código.
+
+- **Sobre as páginas**: Como eu dividi o banco de dados em 3 tabelas, eu achei justo permitir que as 3 pudessem ser vistas
+a partir da interface web.
+
+- **Sobre orgranização do código**: Eu procurei simular o código de uma aplicação escalável nos aspectos que fazê-lo traz
+benefícios para um projeto pequeno como este. Por exemplo: Abstrair estruturas de dados customizadas em suas próprias classes;
+buscar me ater ao padrão MVC; manter pastas para cada parte distinta da aplicação; abstrair a utilização da API em sua própria
+classe (apesar de ter deixado algumas propriedades fixas lá, pois todas as chamadas feitas são usando POST e o mesmo Content-Type). 

@@ -22,6 +22,7 @@ using TesteCobmais.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.SqlServer.Server;
 using TesteCobmais.DTO;
+using TesteCobmais.Helpers;
 
 namespace TesteCobmais.Controllers;
 public class ConsultasController : Controller
@@ -32,7 +33,8 @@ public class ConsultasController : Controller
     {
         ERRO_AO_SALVAR_REGISTRO_CLIENTE,
         ERRO_AO_SALVAR_REGISTRO_CONTRATO,
-        ERRO_AO_PROCESSAR_RESPOSTA_API
+        ERRO_AO_PROCESSAR_RESPOSTA_API,
+        ERRO_AO_GERAR_ARQUIVO_DIVIDAS_ATUALIZADAS
     }
 
 
@@ -44,6 +46,19 @@ public class ConsultasController : Controller
     // GET: Consultas
     public async Task<IActionResult> Index()
     {
+        if(TempData.TryGetValue("ErrosDaRequisicaoAtual", out object ErrosDaRequisicaoAtualJSON))
+        {
+            List<KeyValuePair<ErrosDeProcessamento, string>>? ErrosDaRequisicaoAtual =
+                JsonConvert.DeserializeObject<List<KeyValuePair<ErrosDeProcessamento, string>>>(ErrosDaRequisicaoAtualJSON as string);
+            if (ErrosDaRequisicaoAtual.Count > 0)
+            {
+                foreach (KeyValuePair<ErrosDeProcessamento, string> par in ErrosDaRequisicaoAtual)
+                {
+                    ModelState.AddModelError(par.Key.ToString(), par.Value);
+                }
+            }
+        }
+
         var applicationDbContext = _context.LogConsultas.Include(l => l.contrato);
         return View(await applicationDbContext.ToListAsync());
     }
@@ -51,8 +66,7 @@ public class ConsultasController : Controller
     [HttpGet]
     public async Task<IActionResult> ImportarArquivoCSV()
     {
-
-        List<ErrosDeProcessamento> erros = new List<ErrosDeProcessamento>();
+        var ErrosDaRequisicaoAtual = new List<KeyValuePair<ErrosDeProcessamento, string>>();
 
         var config = new CsvConfiguration(new CultureInfo("pt-BR"))
         {
@@ -100,7 +114,9 @@ public class ConsultasController : Controller
                     }
                     catch (Exception e)
                     {
-                        erros.Add(ErrosDeProcessamento.ERRO_AO_SALVAR_REGISTRO_CLIENTE);
+                        ErrosDaRequisicaoAtual.Add(
+                            new KeyValuePair<ErrosDeProcessamento, string>(ErrosDeProcessamento.ERRO_AO_SALVAR_REGISTRO_CLIENTE, "Não foi possível salvar o cliente "+registro.CLIENTE)
+                        );
                     }
                 }
 
@@ -122,7 +138,10 @@ public class ConsultasController : Controller
                     }
                     catch (Exception e)
                     {
-                        erros.Add(ErrosDeProcessamento.ERRO_AO_SALVAR_REGISTRO_CONTRATO);
+                        ErrosDaRequisicaoAtual.Add(
+                            new KeyValuePair<ErrosDeProcessamento, string>(ErrosDeProcessamento.ERRO_AO_SALVAR_REGISTRO_CONTRATO,
+                            "Não foi possível salvar o contrato "+registro.CONTRATO)
+                        );
                     }
 
                 }
@@ -131,48 +150,43 @@ public class ConsultasController : Controller
 
                 //TODO: abstrair as chamadas pra API em uma classe se tiver tempo
                 //fazendo chamada pra api
-                try
-                {
-                    using (HttpClient client = new HttpClient())
-                    {
-                        string url = "https://api.cobmais.com.br/testedev/calculo";
-                        string payload = JsonConvert.SerializeObject(new Dictionary<string, object>
-                            {
-                                { "TipoContrato", registro.TipoDeContrato },
-                                { "Atraso", atrasoEmDias },
-                                { "Valor", registro.VALOR },
-                            });
-
-                        HttpContent content = new StringContent(payload, Encoding.UTF8, "application/json");
-
-                        HttpResponseMessage response = await client.PostAsync(url, content);
-
-                        if (!response.IsSuccessStatusCode)
+                string payload = JsonConvert.SerializeObject(new Dictionary<string, object>
                         {
-                            throw new Exception(response.StatusCode.ToString());
-                        }
+                            { "TipoContrato", registro.TipoDeContrato },
+                            { "Atraso", atrasoEmDias },
+                            { "Valor", registro.VALOR },
+                        });
+                API apiHandler = new API();
+                apiHandler.Endpoint = "testedev/calculo";
+                apiHandler.Payload = payload;
 
-                        string responseBodyJson = await response.Content.ReadAsStringAsync();
-                        CalculoResponseBody responseBody = new CalculoResponseBody(responseBodyJson);
+                string? respostaAPI = await apiHandler.Call();
 
-                        //adicionando registro de log no banco
-                        LogConsulta logRegistro = new LogConsulta();
-                        logRegistro.ConsultaTimestamp = DateTime.Now;
-                        logRegistro.ContratoId = relacaoIdContratoIdDivida[registro.CONTRATO];
-                        logRegistro.AtrasoEmDias = atrasoEmDias;
-                        logRegistro.ValorAtualizado = responseBody.ValorAtualizado;
-                        logRegistro.DescontoMaximo = responseBody.DescontoMaximo;
-                        _context.Add(logRegistro);
-                        await _context.SaveChangesAsync();
-                    }
-                }
-                catch (Exception e)
+                if(respostaAPI == null)
                 {
-                    erros.Add(ErrosDeProcessamento.ERRO_AO_PROCESSAR_RESPOSTA_API);
+                    ErrosDaRequisicaoAtual.Add(
+                        new KeyValuePair<ErrosDeProcessamento, string>(ErrosDeProcessamento.ERRO_AO_PROCESSAR_RESPOSTA_API,
+                        "Não foi possível processar a consulta de "+registro.CONTRATO+" - "+registro.CLIENTE+" - "+registro.TipoDeContrato)
+                    );
+                    continue;
+                }
+                else
+                {
+                    CalculoResponseBody responseBody = new CalculoResponseBody(respostaAPI);
+
+                    //adicionando registro de log no banco
+                    LogConsulta logRegistro = new LogConsulta();
+                    logRegistro.ConsultaTimestamp = DateTime.Now;
+                    logRegistro.ContratoId = relacaoIdContratoIdDivida[registro.CONTRATO];
+                    logRegistro.AtrasoEmDias = atrasoEmDias;
+                    logRegistro.ValorAtualizado = responseBody.ValorAtualizado;
+                    logRegistro.DescontoMaximo = responseBody.DescontoMaximo;
+                    _context.Add(logRegistro);
+                    await _context.SaveChangesAsync();
                 }
             }
 
-            Console.WriteLine(erros);
+            TempData["ErrosDaRequisicaoAtual"] = JsonConvert.SerializeObject(ErrosDaRequisicaoAtual);
 
             return RedirectToAction("Index");
         }
@@ -181,8 +195,7 @@ public class ConsultasController : Controller
     [HttpGet]
     public async Task<IActionResult> ExportarDividasAtualizadas()
     {
-        List<ErrosDeProcessamento> erros = new List<ErrosDeProcessamento>();
-
+        var ErrosDaRequisicaoAtual = new List<KeyValuePair<ErrosDeProcessamento, string>>();
         DateTime today = DateTime.UtcNow.Date;
 
         var query = from co in _context.Contratos
@@ -219,48 +232,44 @@ public class ConsultasController : Controller
 
             if (!TimestampSimDeHoje)
             {
-                try { 
-                using (HttpClient client = new HttpClient())
-                    {
-                    int atrasoEmDias = Contrato.CalcularVencimento(registro.VencimentoContrato);
-                        string url = "https://api.cobmais.com.br/testedev/calculo";
-                        string payload = JsonConvert.SerializeObject(new Dictionary<string, object>
-                            {
-                                { "TipoContrato", registro.TipoDeContrato },
-                                { "Atraso", atrasoEmDias },
-                                { "Valor", registro.ValorOriginal },
-                            });
-
-                        HttpContent content = new StringContent(payload, Encoding.UTF8, "application/json");
-
-                        HttpResponseMessage response = await client.PostAsync(url, content);
-
-                        if (!response.IsSuccessStatusCode)
-                        {
-                            throw new Exception(response.StatusCode.ToString());
-                        }
-
-                        string responseBodyJson = await response.Content.ReadAsStringAsync();
-                        CalculoResponseBody responseBody = new CalculoResponseBody(responseBodyJson);
-
-                        //adicionando registro de log no banco
-                        LogConsulta logRegistro = new LogConsulta();
-                        logRegistro.ConsultaTimestamp = DateTime.Now;
-                        logRegistro.ContratoId = registro.ContratoId;
-                        logRegistro.AtrasoEmDias = atrasoEmDias;
-                        logRegistro.ValorAtualizado = responseBody.ValorAtualizado;
-                        logRegistro.DescontoMaximo = responseBody.DescontoMaximo;
-                        _context.Add(logRegistro);
-                        await _context.SaveChangesAsync();
-
-                        valorAtualizado = responseBody.ValorAtualizado;
-                    }
-                }
-                catch (Exception e)
+                int atrasoEmDias = Contrato.CalcularVencimento(registro.VencimentoContrato);
+                string payload = JsonConvert.SerializeObject(new Dictionary<string, object>
                 {
-                    erros.Add(ErrosDeProcessamento.ERRO_AO_PROCESSAR_RESPOSTA_API);
+                    { "TipoContrato", registro.TipoDeContrato },
+                    { "Atraso", atrasoEmDias },
+                    { "Valor", registro.ValorOriginal },
+                });
+
+                API apiHandler = new API();
+                apiHandler.Endpoint = "testedev/calculo";
+                apiHandler.Payload = payload;
+
+                string? respostaAPI = await apiHandler.Call();
+
+                if(respostaAPI == null)
+                {
+                    ErrosDaRequisicaoAtual.Add(
+                        new KeyValuePair<ErrosDeProcessamento, string>(ErrosDeProcessamento.ERRO_AO_PROCESSAR_RESPOSTA_API, 
+                        "Não foi possível processar a consulta de "+registro.DividaId+". Não foi possível gerar arquivo inconsistente.")
+                    );
+                    return RedirectToAction("Index");
+
+                } else
+                {
+                    CalculoResponseBody corpoResposta = new CalculoResponseBody(respostaAPI);
+
+                    //adicionando registro de log no banco
+                    LogConsulta logRegistro = new LogConsulta();
+                    logRegistro.ConsultaTimestamp = DateTime.Now;
+                    logRegistro.ContratoId = registro.ContratoId;
+                    logRegistro.AtrasoEmDias = atrasoEmDias;
+                    logRegistro.ValorAtualizado = corpoResposta.ValorAtualizado;
+                    logRegistro.DescontoMaximo = corpoResposta.DescontoMaximo;
+                    _context.Add(logRegistro);
+                    await _context.SaveChangesAsync();
+                    valorAtualizado = corpoResposta.ValorAtualizado;
                 }
-     
+
             }
 
             var linhaFormatada = new CSVExportTemplateLinha();
@@ -275,21 +284,34 @@ public class ConsultasController : Controller
             dadosParaExportar.Add(linhaFormatada);
         }
 
-        //exportando pra csv
-        CsvConfiguration config = new CsvConfiguration(new CultureInfo("pt-BR"))
+        try
         {
-            NewLine = Environment.NewLine,
-            Delimiter = ";"
-        };
+            //exportando pra csv
+            CsvConfiguration config = new CsvConfiguration(new CultureInfo("pt-BR"))
+            {
+                NewLine = Environment.NewLine,
+                Delimiter = ";"
+            };
 
-        StreamReader reader = new StreamReader("Arquivos CSV/dividas-originais_teste_cobmais_2021.csv");
-        string hojeFormatadoArquivo = hoje.ToString("dd-MM-yyyy");
-        using (var writer = new StreamWriter("Arquivos CSV/Divida-Atualizada-"+hojeFormatadoArquivo+".csv"))
-        using (var csv = new CsvWriter(writer, config))
+            StreamReader reader = new StreamReader("Arquivos CSV/dividas-originais_teste_cobmais_2021.csv");
+            string hojeFormatadoArquivo = hoje.ToString("dd-MM-yyyy");
+            using (var writer = new StreamWriter("Arquivos CSV/Divida-Atualizada-" + hojeFormatadoArquivo + ".csv"))
+            using (var csv = new CsvWriter(writer, config))
+            {
+                csv.WriteRecords(dadosParaExportar);
+            }
+
+        }
+        catch (Exception)
         {
-            csv.WriteRecords(dadosParaExportar);
+            ErrosDaRequisicaoAtual.Add(
+                new KeyValuePair<ErrosDeProcessamento, string>(ErrosDeProcessamento.ERRO_AO_GERAR_ARQUIVO_DIVIDAS_ATUALIZADAS,
+                "Não foi possível gerar o arquivo de dívidas atualizadas")
+            );
         }
 
+        TempData["ErrosDaRequisicaoAtual"] = JsonConvert.SerializeObject(ErrosDaRequisicaoAtual);
+       
         return RedirectToAction("Index");
     }
 }
