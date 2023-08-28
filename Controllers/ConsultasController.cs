@@ -112,7 +112,7 @@ public class ConsultasController : Controller
 
                         relacaoIdClienteCPF.TryAdd(registro.CPF, cliente.Id);
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         ErrosDaRequisicaoAtual.Add(
                             new KeyValuePair<ErrosDeProcessamento, string>(ErrosDeProcessamento.ERRO_AO_SALVAR_REGISTRO_CLIENTE, "Não foi possível salvar o cliente "+registro.CLIENTE)
@@ -136,7 +136,7 @@ public class ConsultasController : Controller
 
                         relacaoIdContratoIdDivida.TryAdd(registro.CONTRATO, contrato.Id);
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         ErrosDaRequisicaoAtual.Add(
                             new KeyValuePair<ErrosDeProcessamento, string>(ErrosDeProcessamento.ERRO_AO_SALVAR_REGISTRO_CONTRATO,
