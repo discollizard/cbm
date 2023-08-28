@@ -1,3 +1,7 @@
+## Como rodar o projeto
+A versão de release buildada do projeto está na pasta `bin\Release\net6.0\publish`. Talvez seja necessário criar uma pasta
+`Arquivos CSV` e colocar o arquivo de importação dentro, se já não estiver criada, para o programa ter onde ler o arquivo
+de input e onde colocar o arquivo de exportação. Os arquivos banco de dados (.mdf e .ldf) estão na raiz do projeto.
 ## Ideias para melhorias
 - Possibilitar o envio de vários objetos dentro do JSON para otimizar a utilização de recursos da API
 ![Atualmente o endpoint só dá suporte a 1 objeto por vez, o que, dentro de um loop, gera um excesso desnecessário de chamadas HTTP](./print_api1.png)
