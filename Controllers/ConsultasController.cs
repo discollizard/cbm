@@ -23,6 +23,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.SqlServer.Server;
 using TesteCobmais.DTO;
 using TesteCobmais.Helpers;
+using Humanizer;
+using System.Security.Policy;
 
 namespace TesteCobmais.Controllers;
 public class ConsultasController : Controller
@@ -164,6 +166,16 @@ public class ConsultasController : Controller
 
                 if(respostaAPI == null)
                 {
+                    //adicionando registro de log de requisição falha no banco
+                    LogConsulta logRegistro = new LogConsulta();
+                    logRegistro.ConsultaTimestamp = DateTime.Now;
+                    logRegistro.ContratoId = relacaoIdContratoIdDivida[registro.CONTRATO];
+                    logRegistro.AtrasoEmDias = null;
+                    logRegistro.ValorAtualizado = null;
+                    logRegistro.DescontoMaximo = null;
+                    _context.Add(logRegistro);
+                    await _context.SaveChangesAsync();
+
                     ErrosDaRequisicaoAtual.Add(
                         new KeyValuePair<ErrosDeProcessamento, string>(ErrosDeProcessamento.ERRO_AO_PROCESSAR_RESPOSTA_API,
                         "Não foi possível processar a consulta de "+registro.CONTRATO+" - "+registro.CLIENTE+" - "+registro.TipoDeContrato)
@@ -228,7 +240,7 @@ public class ConsultasController : Controller
             //de hoje
             bool TimestampSimDeHoje = registro.LogMaisRecente.Date == DateTime.Today;
 
-            double valorAtualizado = registro.ValorAtualizado;
+            double? valorAtualizado = registro.ValorAtualizado;
 
             if (!TimestampSimDeHoje)
             {
@@ -272,14 +284,19 @@ public class ConsultasController : Controller
 
             }
 
+            if(valorAtualizado == null || registro.PorcentagemDescontoMaximo == null)
+            {
+                continue;
+            }
+
             var linhaFormatada = new CSVExportTemplateLinha();
             linhaFormatada.CPF = registro.CPF;
             linhaFormatada.DATA = hojeFormatadoLinha;
             linhaFormatada.CONTRATO = registro.DividaId;
             linhaFormatada.ValorOriginal = registro.ValorOriginal;
-            linhaFormatada.ValorAtualizado = valorAtualizado;
+            linhaFormatada.ValorAtualizado = (double)valorAtualizado;
             linhaFormatada.ValorDesconto = 
-                valorAtualizado - ((valorAtualizado / 100) * registro.PorcentagemDescontoMaximo);
+                (double)valorAtualizado - (((double)valorAtualizado / 100) * (double)registro.PorcentagemDescontoMaximo);
 
             dadosParaExportar.Add(linhaFormatada);
         }

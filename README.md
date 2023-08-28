@@ -16,9 +16,9 @@ do erro que eu mencionei acima nas ideias para melhorias, que ocorre quando se u
 fui na função de cliente HTTP da própria documentação para provar.
 ![Chamada com tipo de contrato "MENSALIDADE ESCOLAR"](./print_api4.jpg)
 ![Chamada idêntica mas com tipo de contrato "CONDOMINIO"](./print_api5.jpg)
-Eu interpretei que a melhor abordagem seria ignorar os registros de condomínio até que eu pudesse
-falar com alguem da equipe da Cobmais sobre.
-
+Eu interpretei que a melhor abordagem seria salvar o log do registro como uma requisição que
+deu errado, mostrar na interface qual contrato deu errado e não colocar o dado no arquivo de
+exportação.
 ## Notas sobre o desenvolvimento
 - **Sobre o banco de dados**: A estrutura de tabelas foi definida em 3 tabelas: Clientes, Contratos e LogContratos. Isso se deu pois
 eu considerei esta uma forma mais sã, concisa e atômica de separar os dados em seus diferentes domínios,

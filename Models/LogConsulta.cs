@@ -13,11 +13,11 @@ namespace TesteCobmais.Models;
         [Display(Name = "Data e hora da consulta")]
         public DateTime ConsultaTimestamp{ get; set;}
         [Display(Name = "Atraso em dias")]
-        public int AtrasoEmDias { get; set;}
+        public int? AtrasoEmDias { get; set;}
         [Display(Name = "Valor atualizado")]
-        public double ValorAtualizado { get; set;}
+        public double? ValorAtualizado { get; set;}
         [Display(Name = "Desconto máximo")]
-        public double DescontoMaximo { get; set; }
+        public double? DescontoMaximo { get; set; }
         
         [ForeignKey("ContratoId")]
         public Contrato contrato { get; set; }
